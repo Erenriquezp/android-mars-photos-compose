@@ -33,20 +33,20 @@ import com.example.marsphotos.ui.screens.MarsViewModel
 fun MarsPhotosApp() {
     val navController = rememberNavController()
 
-    // Configuramos la navegación
+    // Configuramos el NavHost para manejar la navegación entre Login y Home
     NavHost(navController = navController, startDestination = "login") {
 
-        // PANTALLA 1: LOGIN
+        // --- PANTALLA 1: LOGIN ---
         composable("login") {
             LoginScreen(
                 onLoginClick = { user, time ->
-                    // Navegamos a home pasando los argumentos
+                    // Navegamos a la ruta 'home' enviando usuario y hora
                     navController.navigate("home/$user/$time")
                 }
             )
         }
 
-        // PANTALLA 2: HOME (Recibe user y time)
+        // --- PANTALLA 2: HOME (Recibe user y time) ---
         composable(
             route = "home/{user}/{time}",
             arguments = listOf(
@@ -54,43 +54,43 @@ fun MarsPhotosApp() {
                 navArgument("time") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            // Recuperamos los datos pasados desde el Login
+            // 1. Recuperamos los datos de los argumentos
             val user = backStackEntry.arguments?.getString("user") ?: "Invitado"
             val time = backStackEntry.arguments?.getString("time") ?: ""
 
-            // Aquí va el Scaffold original que tenías, ahora dentro de la ruta Home
             val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
+            // 2. Scaffold con la Barra Superior Personalizada
             Scaffold(
                 modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                // Pasamos los datos a la barra superior
                 topBar = {
                     MarsTopAppBar(
                         scrollBehavior = scrollBehavior,
-                        user = user,
-                        time = time
+                        user = user, // Pasamos el usuario para mostrarlo arriba
+                        time = time  // Pasamos la hora para mostrarla arriba
                     )
                 }
             ) { innerPadding ->
+                // 3. Contenido de la pantalla (El JSON)
                 Surface(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(innerPadding) // Usar el padding del Scaffold aquí
+                        .padding(innerPadding) // Importante: Respetar el padding de la TopBar
                 ) {
-                    val marsViewModel: MarsViewModel = viewModel(factory = MarsViewModel.Factory)
+                    val marsViewModel: MarsViewModel = viewModel()
+
+                    // Llamamos a HomeScreen pasando solo el estado y el modificador
                     HomeScreen(
                         marsUiState = marsViewModel.marsUiState,
-                        retryAction = marsViewModel::getMarsPhotos
-                        // El contentPadding ya no es necesario pasarlo a HomeScreen
-                        // si se aplica directamente en el Modifier del Surface o un Layout contenedor.
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
-
         }
     }
 }
 
+// Barra superior personalizada que cumple el requisito de mostrar Usuario y Hora
 @Composable
 fun MarsTopAppBar(
     scrollBehavior: TopAppBarScrollBehavior,
@@ -101,13 +101,13 @@ fun MarsTopAppBar(
     CenterAlignedTopAppBar(
         scrollBehavior = scrollBehavior,
         title = {
-            // Columna para mostrar Título + Datos del usuario
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Título de la App
                 Text(
                     text = stringResource(R.string.app_name),
                     style = MaterialTheme.typography.headlineSmall,
                 )
-                // REQUISITO: Mostrar nombre y hora
+                // Subtítulo con Datos del Usuario
                 Text(
                     text = "$user | $time",
                     style = MaterialTheme.typography.labelMedium
